@@ -107,6 +107,23 @@
     "dueDate": "2024-01-21",
     "completed": false,
     "createdAt": "2024-01-10T18:00:00Z",
-    "order": 10
+"order": 10
+  },
+  {
+    "Id": 11,
+    "title": "Daily standup meeting",
+    "description": "Team standup and progress review",
+    "categoryId": 1,
+    "priority": "medium",
+    "dueDate": "2024-01-15",
+    "completed": false,
+    "createdAt": "2024-01-10T19:00:00Z",
+    "order": 11,
+    "recurrence": {
+      "type": "daily",
+      "interval": 1,
+      "customDays": [],
+      "endDate": ""
+    }
   }
 ]

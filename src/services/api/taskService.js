@@ -16,14 +16,20 @@ export const taskService = {
     return task ? { ...task } : null;
   },
 
-  async create(taskData) {
+async create(taskData) {
     await delay(400);
     const newTask = {
       ...taskData,
       Id: Math.max(...tasks.map(t => t.Id)) + 1,
       createdAt: new Date().toISOString(),
       completed: false,
-      order: tasks.length + 1
+      order: tasks.length + 1,
+      recurrence: taskData.recurrence || {
+        type: 'none',
+        interval: 1,
+        customDays: [],
+        endDate: ''
+      }
     };
     tasks.push(newTask);
     return { ...newTask };

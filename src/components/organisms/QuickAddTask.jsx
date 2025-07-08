@@ -8,12 +8,18 @@ import ApperIcon from '@/components/ApperIcon';
 
 const QuickAddTask = ({ categories, onAddTask }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [formData, setFormData] = useState({
+const [formData, setFormData] = useState({
     title: '',
     description: '',
     categoryId: '',
     priority: 'medium',
-    dueDate: new Date().toISOString().split('T')[0]
+    dueDate: new Date().toISOString().split('T')[0],
+    recurrence: {
+      type: 'none',
+      interval: 1,
+      customDays: [],
+      endDate: ''
+    }
   });
   const [loading, setLoading] = useState(false);
 
@@ -31,12 +37,18 @@ const QuickAddTask = ({ categories, onAddTask }) => {
         categoryId: formData.categoryId ? parseInt(formData.categoryId) : null
       });
       
-      setFormData({
+setFormData({
         title: '',
         description: '',
         categoryId: '',
         priority: 'medium',
-        dueDate: new Date().toISOString().split('T')[0]
+        dueDate: new Date().toISOString().split('T')[0],
+        recurrence: {
+          type: 'none',
+          interval: 1,
+          customDays: [],
+          endDate: ''
+        }
       });
       setIsExpanded(false);
       toast.success('Task added successfully!');
@@ -146,7 +158,91 @@ const QuickAddTask = ({ categories, onAddTask }) => {
                 placeholder="Add a description..."
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              />
+/>
+            </div>
+            
+            {/* Recurrence Section */}
+            <div className="border-t border-gray-200 pt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                <ApperIcon name="Repeat" className="w-4 h-4 inline mr-2" />
+                Recurrence
+              </label>
+              
+              <div className="space-y-4">
+                <div>
+                  <Select
+                    value={formData.recurrence.type}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      recurrence: { ...prev.recurrence, type: e.target.value }
+                    }))}
+                  >
+                    <option value="none">No recurrence</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="custom">Custom</option>
+                  </Select>
+                </div>
+                
+                {formData.recurrence.type !== 'none' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {formData.recurrence.type === 'custom' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
+                          Repeat every
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min="1"
+                            value={formData.recurrence.interval}
+                            onChange={(e) => setFormData(prev => ({ 
+                              ...prev, 
+                              recurrence: { ...prev.recurrence, interval: parseInt(e.target.value) || 1 }
+                            }))}
+                            className="w-20"
+                          />
+                          <span className="text-sm text-gray-600">day(s)</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">
+                        End date (optional)
+                      </label>
+                      <Input
+                        type="date"
+                        value={formData.recurrence.endDate}
+                        onChange={(e) => setFormData(prev => ({ 
+                          ...prev, 
+                          recurrence: { ...prev.recurrence, endDate: e.target.value }
+                        }))}
+                        min={formData.dueDate}
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {formData.recurrence.type !== 'none' && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <ApperIcon name="Info" className="w-4 h-4 text-blue-600 mt-0.5" />
+                      <div className="text-sm text-blue-800">
+                        <p className="font-medium">Recurrence pattern:</p>
+                        <p>
+                          {formData.recurrence.type === 'daily' && 'This task will repeat every day'}
+                          {formData.recurrence.type === 'weekly' && 'This task will repeat every week'}
+                          {formData.recurrence.type === 'monthly' && 'This task will repeat every month'}
+                          {formData.recurrence.type === 'custom' && `This task will repeat every ${formData.recurrence.interval} day(s)`}
+                          {formData.recurrence.endDate && ` until ${formData.recurrence.endDate}`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
