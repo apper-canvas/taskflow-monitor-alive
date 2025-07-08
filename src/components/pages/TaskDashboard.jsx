@@ -8,18 +8,18 @@ import QuickAddTask from '@/components/organisms/QuickAddTask';
 import TaskList from '@/components/organisms/TaskList';
 import TaskStats from '@/components/organisms/TaskStats';
 import TaskFilters from '@/components/organisms/TaskFilters';
+import EditTaskModal from '@/components/organisms/EditTaskModal';
 import ApperIcon from '@/components/ApperIcon';
-
 const TaskDashboard = () => {
   const { tasks, loading, error, createTask, updateTask, deleteTask, toggleComplete, refetch } = useTasks();
-  const { categories } = useCategories();
+const { categories } = useCategories();
   
   const [view, setView] = useState('today');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('dueDate');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
+  const [editingTask, setEditingTask] = useState(null);
 const sortedTasks = useMemo(() => {
     return [...tasks].sort((a, b) => {
       switch (sortBy) {
@@ -49,11 +49,23 @@ const sortedTasks = useMemo(() => {
     }
   };
 
-  const handleEditTask = (task) => {
-    // For now, just show a toast - in a real app, this would open an edit modal
-    toast.info('Edit functionality would open here');
+const handleEditTask = (task) => {
+    setEditingTask(task);
   };
 
+  const handleEditSave = async (taskId, updateData) => {
+    try {
+      await updateTask(taskId, updateData);
+      toast.success('Task updated successfully');
+    } catch (error) {
+      toast.error('Failed to update task');
+      throw error;
+    }
+  };
+
+  const handleEditClose = () => {
+    setEditingTask(null);
+  };
   const handleDeleteTask = async (taskId) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
       await deleteTask(taskId);
@@ -154,11 +166,20 @@ const sortedTasks = useMemo(() => {
                 view={view}
                 selectedCategory={selectedCategory}
                 searchTerm={searchTerm}
-              />
+/>
             </div>
           </main>
         </div>
       </div>
+
+      {/* Edit Task Modal */}
+      <EditTaskModal
+        task={editingTask}
+        categories={categories}
+        isOpen={!!editingTask}
+        onClose={handleEditClose}
+        onSave={handleEditSave}
+      />
     </div>
   );
 };

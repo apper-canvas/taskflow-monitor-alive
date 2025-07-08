@@ -30,12 +30,10 @@ const TaskList = ({
                            task.description?.toLowerCase().includes(searchLower);
       if (!matchesSearch) return false;
     }
-
-    // Category filter
-    if (selectedCategory !== null && task.categoryId !== selectedCategory) {
+// Category filter
+    if (selectedCategory !== null && parseInt(task.categoryId) !== parseInt(selectedCategory)) {
       return false;
     }
-
     // View filter
     const taskDate = new Date(task.dueDate);
     switch (view) {
