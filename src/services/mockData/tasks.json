@@ -1,0 +1,112 @@
+[
+  {
+    "Id": 1,
+    "title": "Complete project presentation",
+    "description": "Prepare slides for quarterly review meeting",
+    "categoryId": 1,
+    "priority": "high",
+    "dueDate": "2024-01-15",
+    "completed": false,
+    "createdAt": "2024-01-10T09:00:00Z",
+    "order": 1
+  },
+  {
+    "Id": 2,
+    "title": "Review team proposals",
+    "description": "Go through submitted project proposals and provide feedback",
+    "categoryId": 1,
+    "priority": "medium",
+    "dueDate": "2024-01-16",
+    "completed": false,
+    "createdAt": "2024-01-10T10:30:00Z",
+    "order": 2
+  },
+  {
+    "Id": 3,
+    "title": "Schedule dentist appointment",
+    "description": "Book routine cleaning appointment",
+    "categoryId": 3,
+    "priority": "medium",
+    "dueDate": "2024-01-18",
+    "completed": false,
+    "createdAt": "2024-01-10T11:00:00Z",
+    "order": 3
+  },
+  {
+    "Id": 4,
+    "title": "Buy groceries",
+    "description": "Get ingredients for weekend dinner party",
+    "categoryId": 5,
+    "priority": "low",
+    "dueDate": "2024-01-17",
+    "completed": false,
+    "createdAt": "2024-01-10T12:00:00Z",
+    "order": 4
+  },
+  {
+    "Id": 5,
+    "title": "Finish React course",
+    "description": "Complete final project and submit for review",
+    "categoryId": 4,
+    "priority": "high",
+    "dueDate": "2024-01-20",
+    "completed": false,
+    "createdAt": "2024-01-10T13:00:00Z",
+    "order": 5
+  },
+  {
+    "Id": 6,
+    "title": "Call mom",
+    "description": "Weekly check-in call with family",
+    "categoryId": 2,
+    "priority": "medium",
+    "dueDate": "2024-01-14",
+    "completed": true,
+    "createdAt": "2024-01-09T14:00:00Z",
+    "order": 6
+  },
+  {
+    "Id": 7,
+    "title": "Update LinkedIn profile",
+    "description": "Add recent project accomplishments",
+    "categoryId": 1,
+    "priority": "low",
+    "dueDate": "2024-01-19",
+    "completed": false,
+    "createdAt": "2024-01-10T15:00:00Z",
+    "order": 7
+  },
+  {
+    "Id": 8,
+    "title": "Go for evening walk",
+    "description": "30-minute walk around the neighborhood",
+    "categoryId": 3,
+    "priority": "low",
+    "dueDate": "2024-01-15",
+    "completed": false,
+    "createdAt": "2024-01-10T16:00:00Z",
+    "order": 8
+  },
+  {
+    "Id": 9,
+    "title": "Read 'Clean Code' chapter",
+    "description": "Study chapter 5 about formatting",
+    "categoryId": 4,
+    "priority": "medium",
+    "dueDate": "2024-01-16",
+    "completed": false,
+    "createdAt": "2024-01-10T17:00:00Z",
+    "order": 9
+  },
+  {
+    "Id": 10,
+    "title": "Plan weekend trip",
+    "description": "Research destinations and book accommodations",
+    "categoryId": 2,
+    "priority": "low",
+    "dueDate": "2024-01-21",
+    "completed": false,
+    "createdAt": "2024-01-10T18:00:00Z",
+    "order": 10
+  }
+]
