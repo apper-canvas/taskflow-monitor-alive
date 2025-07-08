@@ -20,12 +20,13 @@ const TaskDashboard = () => {
   const [sortBy, setSortBy] = useState('dueDate');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const sortedTasks = useMemo(() => {
+const sortedTasks = useMemo(() => {
     return [...tasks].sort((a, b) => {
       switch (sortBy) {
-        case 'priority':
+        case 'priority': {
           const priorityOrder = { high: 3, medium: 2, low: 1 };
           return priorityOrder[b.priority] - priorityOrder[a.priority];
+        }
         case 'title':
           return a.title.localeCompare(b.title);
         case 'created':
