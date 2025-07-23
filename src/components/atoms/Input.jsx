@@ -1,29 +1,69 @@
-import { forwardRef } from 'react';
-import { cn } from '@/utils/cn';
+import React, { forwardRef, useEffect, useState } from "react";
+import { cn } from "@/utils/cn";
 
 const Input = forwardRef(({ 
   className, 
-  type = 'text',
-  error = false,
+  type, 
+  value: controlledValue, 
+  onChange,
+  detectUrlPrefix = false,
+  urlPrefix = "https://",
   ...props 
 }, ref) => {
-  const baseStyles = "block w-full px-3 py-2 text-sm border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 placeholder:text-gray-400";
-  
-  const variants = {
-    default: "border-gray-300 focus:border-primary focus:ring-primary",
-    error: "border-error focus:border-error focus:ring-error"
+  const [internalValue, setInternalValue] = useState(controlledValue || "");
+
+  // Sync internal value with controlled value
+  useEffect(() => {
+    setInternalValue(controlledValue || "");
+  }, [controlledValue]);
+
+  const handleChange = (e) => {
+    let newValue = e.target.value;
+    
+    // Apply URL prefix logic if enabled
+    if (detectUrlPrefix && type === "url") {
+      // Check if user is typing and doesn't have a protocol
+      if (newValue && !newValue.match(/^https?:\/\//)) {
+        // If the value doesn't start with the prefix, add it
+        if (!newValue.startsWith(urlPrefix)) {
+          newValue = urlPrefix + newValue;
+        }
+      }
+    }
+    
+    setInternalValue(newValue);
+    
+    // Call the original onChange with the processed value
+    if (onChange) {
+      const syntheticEvent = {
+        ...e,
+        target: {
+          ...e.target,
+          value: newValue
+        }
+      };
+      onChange(syntheticEvent);
+    }
   };
+
+  const displayValue = controlledValue !== undefined ? controlledValue : internalValue;
 
   return (
     <input
-      ref={ref}
       type={type}
-      className={cn(baseStyles, error ? variants.error : variants.default, className)}
+      className={cn(
+        "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      )}
+      ref={ref}
+      value={displayValue}
+      onChange={handleChange}
       {...props}
     />
-  );
-});
+  )
+})
 
-Input.displayName = "Input";
+Input.displayName = "Input"
 
-export default Input;
+export { Input }
+export default Input

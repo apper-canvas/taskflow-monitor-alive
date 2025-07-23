@@ -1,33 +1,49 @@
-import { useState } from 'react';
-import Input from '@/components/atoms/Input';
-import ApperIcon from '@/components/ApperIcon';
+import { useState } from "react";
+import Input from "@/components/atoms/Input";
+import Button from "@/components/atoms/Button";
+import ApperIcon from "@/components/ApperIcon";
 
-const SearchBar = ({ onSearch, placeholder = "Search tasks..." }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+const SearchBar = ({ 
+  placeholder = "Search...", 
+  onSearch, 
+  className = "",
+  showFilter = false,
+  onFilter
+}) => {
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const handleSearch = (value) => {
+  const handleSearch = (e) => {
+    const value = e.target.value;
     setSearchTerm(value);
     onSearch?.(value);
   };
 
   return (
-    <div className="relative">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <ApperIcon name="Search" className="w-4 h-4 text-gray-400" />
+    <div className={`flex items-center gap-3 ${className}`}>
+      <div className="relative flex-1">
+        <ApperIcon 
+          name="Search" 
+          size={20} 
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" 
+        />
+        <Input
+          type="text"
+          placeholder={placeholder}
+          value={searchTerm}
+          onChange={handleSearch}
+          className="pl-10"
+        />
       </div>
-      <Input
-        value={searchTerm}
-        onChange={(e) => handleSearch(e.target.value)}
-        placeholder={placeholder}
-        className="pl-10 pr-4"
-      />
-      {searchTerm && (
-        <button
-          onClick={() => handleSearch('')}
-          className="absolute inset-y-0 right-0 pr-3 flex items-center"
+      {showFilter && (
+        <Button
+          variant="outline"
+          size="md"
+          onClick={onFilter}
+          className="shrink-0"
         >
-          <ApperIcon name="X" className="w-4 h-4 text-gray-400 hover:text-gray-600" />
-        </button>
+          <ApperIcon name="Filter" size={16} className="mr-2" />
+          Filter
+        </Button>
       )}
     </div>
   );
