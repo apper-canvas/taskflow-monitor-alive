@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { motion } from "framer-motion";
+import { useSelector } from 'react-redux';
+import { AuthContext } from '../../App';
 import ApperIcon from "@/components/ApperIcon";
 import NavItem from "@/components/molecules/NavItem";
 
@@ -13,7 +15,9 @@ const navigation = [
     { to: "/pipeline", icon: "Kanban", label: "Deal Pipeline" },
     { to: "/calendar", icon: "Calendar", label: "Calendar" },
     { to: "/analytics", icon: "TrendingUp", label: "Analytics" },
-    { to: "/leaderboard", icon: "Trophy", label: "Leaderboard" }
+    { to: "/leaderboard", icon: "Trophy", label: "Leaderboard" },
+    { to: "/teams", icon: "Users", label: "Teams" },
+    { to: "/contacts", icon: "Phone", label: "Contacts" }
   ];
 
   return (
@@ -146,12 +150,14 @@ const MobileSidebar = ({ navigation }) => {
 
 const UserSettings = ({ isCollapsed }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { logout } = useContext(AuthContext);
+  const { user } = useSelector((state) => state.user);
 
 const settingsItems = [
     { icon: "User", label: "Profile", action: () => console.log("Profile") },
     { icon: "Settings", label: "Account Settings", action: () => console.log("Account Settings") },
     { icon: "Palette", label: "Preferences", action: () => console.log("Preferences") },
-    { icon: "LogOut", label: "Logout", action: () => console.log("Logout") }
+    { icon: "LogOut", label: "Logout", action: logout }
   ];
 
 return (
@@ -160,14 +166,20 @@ return (
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         className="w-full flex items-center p-2 hover:bg-gray-100 rounded-lg transition-colors"
       >
-        <div className="flex items-center">
+<div className="flex items-center">
           <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
-            <span className="text-white text-sm font-semibold">U</span>
+            <span className="text-white text-sm font-semibold">
+              {user?.firstName?.charAt(0) || user?.name?.charAt(0) || 'U'}
+            </span>
           </div>
           {!isCollapsed && (
             <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900">User</p>
-              <p className="text-xs text-gray-500">Sales Manager</p>
+              <p className="text-sm font-medium text-gray-900">
+                {user?.firstName || user?.name || 'User'}
+              </p>
+              <p className="text-xs text-gray-500">
+                {user?.accounts?.[0]?.companyName || 'Sales Manager'}
+              </p>
             </div>
           )}
         </div>

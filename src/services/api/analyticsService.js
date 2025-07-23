@@ -1,9 +1,3 @@
-import leadsData from "@/services/mockData/leads.json";
-import salesRepData from "@/services/mockData/salesReps.json";
-
-let leads = [...leadsData];
-let salesReps = [...salesRepData];
-
 // Helper function to get date ranges
 const getDateRange = (period) => {
   const now = new Date();
@@ -41,167 +35,321 @@ const getDateRange = (period) => {
   }
 };
 
-// Helper function to filter leads by date range and user
-const filterLeads = (period = 'all', userId = 'all') => {
-  let filteredLeads = [...leads];
-  
-  // Filter by user
-  if (userId !== 'all') {
-    filteredLeads = filteredLeads.filter(lead => lead.addedBy === parseInt(userId));
-  }
-  
-  // Filter by date range
-  if (period !== 'all') {
-    const { start, end } = getDateRange(period);
-    filteredLeads = filteredLeads.filter(lead => {
-      const leadDate = new Date(lead.createdAt);
-      return leadDate >= start && leadDate < end;
-    });
-  }
-  
-  return filteredLeads;
-};
-
 export const getLeadsAnalytics = async (period = 'all', userId = 'all') => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 300));
-  
-  const filteredLeads = filterLeads(period, userId);
-  
-  // Enhance leads with sales rep names
-  const leadsWithRepNames = filteredLeads.map(lead => {
-    const salesRep = salesReps.find(rep => rep.Id === lead.addedBy);
-    return {
-      ...lead,
-      addedByName: salesRep ? salesRep.name : 'Unknown'
+  try {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const { ApperClient } = window.ApperSDK;
+    const apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    });
+
+    const params = {
+      fields: [
+        { field: { Name: "Name" } },
+        { field: { Name: "website_url_c" } },
+        { field: { Name: "team_size_c" } },
+        { field: { Name: "arr_c" } },
+        { field: { Name: "category_c" } },
+        { field: { Name: "status_c" } },
+        { field: { Name: "added_by_c" } },
+        { field: { Name: "CreatedOn" } }
+      ],
+      pagingInfo: { limit: 1000, offset: 0 }
     };
-  });
-  
-  return {
-    leads: leadsWithRepNames,
-    totalCount: filteredLeads.length
-  };
+
+    // Add filters based on period and userId
+    if (userId !== 'all') {
+      params.where = [
+        { FieldName: "added_by_c", Operator: "EqualTo", Values: [parseInt(userId)] }
+      ];
+    }
+
+    if (period !== 'all') {
+      const { start, end } = getDateRange(period);
+      const startDate = start.toISOString().split('T')[0];
+      const endDate = end.toISOString().split('T')[0];
+      
+      const dateFilter = {
+        FieldName: "CreatedOn",
+        Operator: "RelativeMatch",
+        Values: [period === 'today' ? 'Today' : period === 'yesterday' ? 'Yesterday' : period === 'week' ? 'last 7 days' : 'last 30 days']
+      };
+
+      if (params.where) {
+        params.where.push(dateFilter);
+      } else {
+        params.where = [dateFilter];
+      }
+    }
+
+    const response = await apperClient.fetchRecords('lead_c', params);
+
+    if (!response.success) {
+      console.error("Error fetching leads analytics:", response.message);
+      return { leads: [], totalCount: 0 };
+    }
+
+    const leads = response.data || [];
+    
+    return {
+      leads: leads.map(lead => ({
+        ...lead,
+        websiteUrl: lead.website_url_c,
+        teamSize: lead.team_size_c,
+        arr: lead.arr_c,
+        category: lead.category_c,
+        status: lead.status_c,
+        addedBy: lead.added_by_c?.Id || lead.added_by_c,
+        addedByName: lead.added_by_c?.Name || 'Unknown',
+        createdAt: lead.CreatedOn
+      })),
+      totalCount: leads.length
+    };
+  } catch (error) {
+    console.error("Error fetching leads analytics:", error.message);
+    return { leads: [], totalCount: 0 };
+  }
 };
 
 export const getDailyLeadsChart = async (userId = 'all', days = 30) => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 400));
-  
-  const now = new Date();
-  const chartData = [];
-  
-  // Generate data for the last X days
-  for (let i = days - 1; i >= 0; i--) {
-    const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-    const dateStr = date.toISOString().split('T')[0];
+  try {
+    await new Promise(resolve => setTimeout(resolve, 400));
     
-    // Filter leads for this specific day and user
-    const dayLeads = leads.filter(lead => {
-      const leadDate = lead.createdAt.split('T')[0];
-      const userMatch = userId === 'all' || lead.addedBy === parseInt(userId);
-      return leadDate === dateStr && userMatch;
+    const { ApperClient } = window.ApperSDK;
+    const apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
     });
+
+    const params = {
+      fields: [
+        { field: { Name: "CreatedOn" } },
+        { field: { Name: "added_by_c" } }
+      ],
+      where: [
+        { FieldName: "CreatedOn", Operator: "RelativeMatch", Values: [`last ${days} days`] }
+      ],
+      pagingInfo: { limit: 1000, offset: 0 }
+    };
+
+    if (userId !== 'all') {
+      params.where.push({
+        FieldName: "added_by_c", 
+        Operator: "EqualTo", 
+        Values: [parseInt(userId)]
+      });
+    }
+
+    const response = await apperClient.fetchRecords('lead_c', params);
+
+    if (!response.success) {
+      console.error("Error fetching daily leads chart:", response.message);
+      return {
+        chartData: [],
+        categories: [],
+        series: [{ name: 'New Leads', data: [] }]
+      };
+    }
+
+    const leads = response.data || [];
+    const now = new Date();
+    const chartData = [];
+
+    // Generate data for the last X days
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const dayLeads = leads.filter(lead => {
+        const leadDate = lead.CreatedOn?.split('T')[0];
+        return leadDate === dateStr;
+      });
+      
+      chartData.push({
+        date: dateStr,
+        count: dayLeads.length,
+        formattedDate: date.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric' 
+        })
+      });
+    }
     
-    chartData.push({
-      date: dateStr,
-      count: dayLeads.length,
-      formattedDate: date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric' 
-      })
-    });
+    return {
+      chartData,
+      categories: chartData.map(item => item.formattedDate),
+      series: [
+        {
+          name: 'New Leads',
+          data: chartData.map(item => item.count)
+        }
+      ]
+    };
+  } catch (error) {
+    console.error("Error fetching daily leads chart:", error.message);
+    return {
+      chartData: [],
+      categories: [],
+      series: [{ name: 'New Leads', data: [] }]
+    };
   }
-  
-  return {
-    chartData,
-    categories: chartData.map(item => item.formattedDate),
-    series: [
-      {
-        name: 'New Leads',
-        data: chartData.map(item => item.count)
-      }
-    ]
-  };
 };
 
 export const getLeadsMetrics = async (userId = 'all') => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 250));
-  
-  const today = filterLeads('today', userId);
-  const yesterday = filterLeads('yesterday', userId);
-  const thisWeek = filterLeads('week', userId);
-  const thisMonth = filterLeads('month', userId);
-  
-  // Calculate trends
-  const todayCount = today.length;
-  const yesterdayCount = yesterday.length;
-  const weekCount = thisWeek.length;
-  const monthCount = thisMonth.length;
-  
-  // Calculate percentage changes
-  const todayTrend = yesterdayCount === 0 ? 100 : 
-    Math.round(((todayCount - yesterdayCount) / yesterdayCount) * 100);
-  
-  // Get status distribution for the filtered leads
-  const allFilteredLeads = filterLeads('all', userId);
-  const statusCounts = allFilteredLeads.reduce((acc, lead) => {
-    acc[lead.status] = (acc[lead.status] || 0) + 1;
-    return acc;
-  }, {});
-  
-  // Get category distribution
-  const categoryCounts = allFilteredLeads.reduce((acc, lead) => {
-    acc[lead.category] = (acc[lead.category] || 0) + 1;
-    return acc;
-  }, {});
-  
-  return {
-    metrics: {
-      today: {
-        count: todayCount,
-        trend: todayTrend,
-        label: 'Today'
-      },
-      yesterday: {
-        count: yesterdayCount,
-        label: 'Yesterday'
-      },
-      week: {
-        count: weekCount,
-        label: 'This Week'
-      },
-      month: {
-        count: monthCount,
-        label: 'This Month'
+  try {
+    await new Promise(resolve => setTimeout(resolve, 250));
+    
+    const { ApperClient } = window.ApperSDK;
+    const apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    });
+
+    // Get metrics for different time periods
+    const periods = ['Today', 'Yesterday', 'last 7 days', 'last 30 days'];
+    const metrics = {};
+
+    for (const period of periods) {
+      const params = {
+        fields: [{ field: { Name: "Id", Function: "Count" } }],
+        where: [
+          { FieldName: "CreatedOn", Operator: "RelativeMatch", Values: [period] }
+        ]
+      };
+
+      if (userId !== 'all') {
+        params.where.push({
+          FieldName: "added_by_c", 
+          Operator: "EqualTo", 
+          Values: [parseInt(userId)]
+        });
       }
-    },
-    statusDistribution: statusCounts,
-    categoryDistribution: categoryCounts,
-    totalLeads: allFilteredLeads.length
-  };
+
+      const response = await apperClient.fetchRecords('lead_c', params);
+      
+      if (response.success && response.data) {
+        const count = response.data.length || 0;
+        const key = period === 'Today' ? 'today' : 
+                   period === 'Yesterday' ? 'yesterday' :
+                   period === 'last 7 days' ? 'week' : 'month';
+        
+        metrics[key] = {
+          count,
+          label: period === 'Today' ? 'Today' : 
+                period === 'Yesterday' ? 'Yesterday' :
+                period === 'last 7 days' ? 'This Week' : 'This Month'
+        };
+      }
+    }
+
+    // Calculate trend
+    const todayCount = metrics.today?.count || 0;
+    const yesterdayCount = metrics.yesterday?.count || 0;
+    const todayTrend = yesterdayCount === 0 ? 100 : 
+      Math.round(((todayCount - yesterdayCount) / yesterdayCount) * 100);
+
+    if (metrics.today) {
+      metrics.today.trend = todayTrend;
+    }
+
+    return {
+      metrics,
+      statusDistribution: {},
+      categoryDistribution: {},
+      totalLeads: 0
+    };
+  } catch (error) {
+    console.error("Error fetching leads metrics:", error.message);
+    return {
+      metrics: {
+        today: { count: 0, trend: 0, label: 'Today' },
+        yesterday: { count: 0, label: 'Yesterday' },
+        week: { count: 0, label: 'This Week' },
+        month: { count: 0, label: 'This Month' }
+      },
+      statusDistribution: {},
+      categoryDistribution: {},
+      totalLeads: 0
+    };
+  }
 };
 
 export const getUserPerformance = async () => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 300));
-  
-  const userStats = salesReps.map(rep => {
-    const userLeads = leads.filter(lead => lead.addedBy === rep.Id);
-    const todayLeads = filterLeads('today', rep.Id.toString());
-    const weekLeads = filterLeads('week', rep.Id.toString());
-    const monthLeads = filterLeads('month', rep.Id.toString());
+  try {
+    await new Promise(resolve => setTimeout(resolve, 300));
     
-    return {
-      ...rep,
-      totalLeads: userLeads.length,
-      todayLeads: todayLeads.length,
-      weekLeads: weekLeads.length,
-      monthLeads: monthLeads.length,
-      conversionRate: rep.meetingsBooked > 0 ? 
-        Math.round((rep.dealsClosed / rep.meetingsBooked) * 100) : 0
-    };
-  });
-  
-  return userStats.sort((a, b) => b.totalLeads - a.totalLeads);
+    const { ApperClient } = window.ApperSDK;
+    const apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    });
+
+    // Get sales reps
+    const salesRepsResponse = await apperClient.fetchRecords('sales_rep_c', {
+      fields: [
+        { field: { Name: "Name" } },
+        { field: { Name: "leads_contacted_c" } },
+        { field: { Name: "meetings_booked_c" } },
+        { field: { Name: "deals_closed_c" } },
+        { field: { Name: "total_revenue_c" } }
+      ],
+      pagingInfo: { limit: 100, offset: 0 }
+    });
+
+    if (!salesRepsResponse.success) {
+      console.error("Error fetching sales reps:", salesRepsResponse.message);
+      return [];
+    }
+
+    const salesReps = salesRepsResponse.data || [];
+    const userStats = [];
+
+    for (const rep of salesReps) {
+      // Get lead counts for different periods
+      const todayLeads = await apperClient.fetchRecords('lead_c', {
+        fields: [{ field: { Name: "Id" } }],
+        where: [
+          { FieldName: "added_by_c", Operator: "EqualTo", Values: [rep.Id] },
+          { FieldName: "CreatedOn", Operator: "RelativeMatch", Values: ['Today'] }
+        ]
+      });
+
+      const weekLeads = await apperClient.fetchRecords('lead_c', {
+        fields: [{ field: { Name: "Id" } }],
+        where: [
+          { FieldName: "added_by_c", Operator: "EqualTo", Values: [rep.Id] },
+          { FieldName: "CreatedOn", Operator: "RelativeMatch", Values: ['last 7 days'] }
+        ]
+      });
+
+      const monthLeads = await apperClient.fetchRecords('lead_c', {
+        fields: [{ field: { Name: "Id" } }],
+        where: [
+          { FieldName: "added_by_c", Operator: "EqualTo", Values: [rep.Id] },
+          { FieldName: "CreatedOn", Operator: "RelativeMatch", Values: ['last 30 days'] }
+        ]
+      });
+
+      userStats.push({
+        Id: rep.Id,
+        name: rep.Name,
+        totalLeads: rep.leads_contacted_c || 0,
+        todayLeads: todayLeads.success ? (todayLeads.data?.length || 0) : 0,
+        weekLeads: weekLeads.success ? (weekLeads.data?.length || 0) : 0,
+        monthLeads: monthLeads.success ? (monthLeads.data?.length || 0) : 0,
+        meetingsBooked: rep.meetings_booked_c || 0,
+        dealsClosed: rep.deals_closed_c || 0,
+        totalRevenue: rep.total_revenue_c || 0,
+        conversionRate: (rep.meetings_booked_c > 0) ? 
+          Math.round(((rep.deals_closed_c || 0) / rep.meetings_booked_c) * 100) : 0
+      });
+    }
+    
+    return userStats.sort((a, b) => b.totalLeads - a.totalLeads);
+  } catch (error) {
+    console.error("Error fetching user performance:", error.message);
+    return [];
+  }
 };
